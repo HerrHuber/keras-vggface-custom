@@ -3,7 +3,12 @@
 ### Python template
 
 # Datasets
-datasets/*
+boxes
+boxes2
+datasets
+embeddings
+images
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

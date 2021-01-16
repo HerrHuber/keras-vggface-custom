@@ -7,14 +7,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import matplotlib.image as mpimg
 from PIL import Image
-import urllib.request
-import threading, queue
+import urllib
+import threading
+import queue
 
 from mtcnn.mtcnn import MTCNN
 
 from keras_vggface.vggface import VGGFace
 from keras_vggface.utils import preprocess_input
 from keras_vggface.utils import decode_predictions
+
+import tensorflow as tf
+
+from tensorflow.keras import datasets as ds
 
 
 def extract_face(filename, size=(224, 224)):
@@ -113,8 +118,9 @@ def extract_bounding_box(filename, box, output_file):
     region = img.crop(box)
     region.save(output_file)
 
-
-def main():
+# Use this to download vggface instead
+# https://github.com/ndaidong/vgg-faces-utils
+def download_test(stage=1):
     print(time.time())
     #test_extract_face()
     #test_recognise_face()
@@ -125,7 +131,6 @@ def main():
     bounding_path = path + 'vgg_face_bounding/images/'
     filename = 'Aamir_Khan.txt'
 
-    stage = 1
 
     if stage == 1:
         threads = 100
@@ -190,6 +195,29 @@ def main():
 
     # create function that adds new images to X and Y
     # and trains the model automaticaly
+
+
+def main():
+    #path = '../datasets/vgg_face_download/images/Aamir_khan/'
+    path = '../datasets/vgg_face_download/images/Elon_Musk/'
+    #path = '../images/'
+    #boundingbox_path = '../boxes/'
+    boundingbox_path = '../boxes2/'
+    images = os.listdir(path)
+    for image in images:
+        print("Try extracting face from: ", path + image)
+        if not os.path.exists(boundingbox_path + image):
+            try:
+                face = extract_face(path + image)
+                im = Image.fromarray(face)
+                im.save(boundingbox_path + image)
+                # plt.imshow(face)
+                # plt.show()
+            except Exception as e:
+                print(e)
+        else:
+            print(image + ' already extrated')
+
 
 if __name__ == "__main__":
     main()
