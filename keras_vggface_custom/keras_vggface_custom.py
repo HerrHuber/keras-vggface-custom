@@ -118,6 +118,7 @@ def extract_bounding_box(filename, box, output_file):
     region = img.crop(box)
     region.save(output_file)
 
+
 # Use this to download vggface instead
 # https://github.com/ndaidong/vgg-faces-utils
 def download_test(stage=1):
@@ -197,7 +198,7 @@ def download_test(stage=1):
     # and trains the model automaticaly
 
 
-def main():
+def old_save_boundingbox():
     #path = '../datasets/vgg_face_download/images/Aamir_khan/'
     path = '../datasets/vgg_face_download/images/Elon_Musk/'
     #path = '../images/'
@@ -217,6 +218,10 @@ def main():
                 print(e)
         else:
             print(image + ' already extrated')
+
+
+def main():
+    pass
 
 
 if __name__ == "__main__":

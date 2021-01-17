@@ -15,7 +15,13 @@ from keras_vggface.vggface import VGGFace
 from keras.engine import Model
 from keras.layers import Flatten, Dense, Input
 
+import tensorflow_addons as tfa
+import tensorflow_datasets as tfds
 
+
+# does not work!!!!
+# take pretrained VGG16 model
+# and continue training with new class (my images)
 def contiue_training():
     boundingbox_path = '../boxes/'
     # read to X, Y
@@ -69,6 +75,10 @@ def contiue_training():
     # preds_test = (preds_test >= 0.5) * 1
 
 
+# take pretrained topless VGG16 model
+# and train a custom classifier on top
+# class 1 = pictures of me
+# class 0 = not me
 def continue_train_topless_binary():
     print(time.time())
     # fine tuning
@@ -140,6 +150,7 @@ def continue_train_topless_binary():
     #print(preds_train)
 
 
+# just testing tf.data.Dataset
 def tf_data_test():
     # https://www.tensorflow.org/guide/data#consuming_numpy_arrays
     # get all images
@@ -186,7 +197,8 @@ def tf_data_test():
     print("Accuracy :", accuracy)
 
 
-def main():
+# just testing tf.keras.preprocessing.image_dataset_from_directory
+def load_image_data_tf():
     # https://www.tensorflow.org/tutorials/load_data/images#load_using_keraspreprocessing
     # downloand data
     print(tf.__version__)
@@ -234,6 +246,10 @@ def main():
 
     #for f in list_ds.take(5):
     #    print(f.numpy())
+
+
+def main():
+    pass
 
 
 if __name__ == "__main__":

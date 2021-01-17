@@ -171,19 +171,18 @@ def get_label_from_name(name):
 
 def delete_currupt(input_dir, output_dir):
     before = len(os.listdir(input_dir))
-    for filename in os.listdir(input_dir):
+    for i, filename in enumerate(os.listdir(input_dir)):
         try:
             im = Image.open(input_dir + "/" + filename)
             exif_data = im._getexif()
-            #with Image.open(input_dir + "/" + filename) as im:
-            #    #print('ok')
-            #    pass
         except Exception as e:
             print('Moving corrupt images to ' + output_dir)
             print(input_dir + "/" + filename)
             print(e)
-            #os.remove(input_dir + "/" + filename)
             os.rename(input_dir + "/" + filename, output_dir + "/" + filename)
+
+        if i % 1000 == 0:
+            print('%.3f%%' % ((i + 1) / before * 100))
 
     after = len(os.listdir(input_dir))
     print('Moved ' + str(before - after) + ' images')
@@ -194,7 +193,7 @@ def crop_images(input_dir, label_dir, output_dir):
     global img_width
 
     before = len(os.listdir(input_dir))
-    for filename in os.listdir(input_dir):
+    for i, filename in enumerate(os.listdir(input_dir)):
         label_file = os.path.join(label_dir, filename).replace('jpg', 'xml')
         #print(label_file)
         mydoc = minidom.parse(label_file)
@@ -225,8 +224,11 @@ def crop_images(input_dir, label_dir, output_dir):
         #plt.imshow(region)
         #plt.show()
 
+        if i % 1000 == 0:
+            print('%.3f%%' % ((i + 1) / before * 100))
+
     after = len(os.listdir(output_dir))
-    print("Copped ", after, " images")
+    print("Cropped ", after, " images")
 
 
 def tf_example():
@@ -299,6 +301,72 @@ def tf_example():
     for image, label in train_ds.take(1):
         print("Image shape: ", image.numpy().shape)
         print("Label: ", label.numpy())
+
+
+# https://www.tensorflow.org/tutorials/load_data/images#load_using_keraspreprocessing
+def load_vggface_data(data_dir, label_dir, batch_size, img_height1, img_width1, AUTOTUNE):
+    global class_names
+    global img_height
+    global img_width
+
+    #batch_size = 2
+    img_height = img_height1
+    img_width = img_width1
+    #AUTOTUNE = tf.data.AUTOTUNE
+    #AUTOTUNE = 1
+
+    #data_dir = '../../VGG_Datasets/output/cropped_images'
+    #label_dir = '../../VGG_Datasets/output/labels'
+    data_dir = pathlib.Path(data_dir)
+    label_dir = pathlib.Path(label_dir)
+
+    image_count = len(list(data_dir.glob('*.jpg')))
+    print("image_count: ", image_count)
+    # 43992 images in output
+
+    examples = list(data_dir.glob('*'))
+    example = Image.open(str(examples[0]))
+    #example.show()
+
+
+
+    print("str(data_dir / *: ", str(data_dir / '*'))
+    list_ds = tf.data.Dataset.list_files(str(data_dir / '*'), shuffle=False)
+    list_ds = list_ds.shuffle(image_count, reshuffle_each_iteration=False)
+
+    filepath = ''
+    for f in list_ds.take(5):
+        filepath = f.numpy()
+        print("filepath: ", filepath)
+
+    class_names = np.array(sorted(list(set([get_label_from_name(item.name) for item in data_dir.glob('*')]))))
+    print("class_names[:10]: ", class_names[:10])
+    print("len(class_names): ", len(class_names))
+
+    val_size = int(image_count * 0.2)
+    train_ds = list_ds.skip(val_size)
+    print("train_ds: ", train_ds)
+    val_ds = list_ds.take(val_size)
+
+    m_train = tf.data.experimental.cardinality(train_ds).numpy()
+    m_val = tf.data.experimental.cardinality(val_ds).numpy()
+    print("m_train: ", m_train)
+    print("m_val: ", m_val)
+    print("m_train + m_val: ", m_train + m_val)
+
+    # what is train_ds?
+    for i in train_ds.take(1):
+        print("i: ", i)
+
+    # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
+    train_ds = train_ds.map(process_path_tensor, num_parallel_calls=AUTOTUNE)
+    val_ds = val_ds.map(process_path_tensor, num_parallel_calls=AUTOTUNE)
+
+    for image, label in train_ds.take(1):
+        print("Image shape: ", image.numpy().shape)
+        print("Label: ", label.numpy())
+
+    return train_ds, val_ds, class_names
 
 
 # create tf.data.Dataset from cropped images and labels
@@ -456,21 +524,33 @@ def my_example():
 
     """
 
+
+def resnet50_example():
+    pass
+
+
 def main():
     global img_height
     global img_width
 
     img_height = 224
     img_width = 224
-    #tf_example()
-    #my_example()
+
     #input_dir = '../../VGG_Datasets/output/images'
     #output_dir = '../../VGG_Datasets/output/corrupt_images'
+    # docker container paths
+    #input_dir = '../../datasets/output/images'
+    #output_dir = '../../datasets/output/corrupt_images'
     #delete_currupt(input_dir, output_dir)
-    input_dir = '../../VGG_Datasets/output/images'
-    label_dir = '../../VGG_Datasets/output/labels'
-    output_dir = '../../VGG_Datasets/output/cropped_images'
-    crop_images(input_dir, label_dir, output_dir)  # 43956 images after delete
+    #input_dir = '../../VGG_Datasets/output/images'
+    #label_dir = '../../VGG_Datasets/output/labels'
+    # docker container paths
+    #input_dir = '../../datasets/output/images'
+    #label_dir = '../../datasets/output/labels'
+    #output_dir = '../../datasets/output/cropped_images'
+    #crop_images(input_dir, label_dir, output_dir)  # 43956 images after delete
+    #tf_example()
+    #my_example()
 
 
 if __name__ == "__main__":

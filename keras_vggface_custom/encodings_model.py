@@ -38,10 +38,10 @@ def add_to_embeddings(file, boundingbox_path, embeddings_path, model=None):
 
 
 # 1. embeddings model (pretrained topless model)
-# new Image -> pretrained forward topless -> new embedding
+# new Image -> pretrained forward ResNet50 topless -> new embedding
 # -> euklidian distance over old embeddings -> list of predictions
 # 2. common pretrained model
-# new Image -> pretrained foreward -> list of predictions
+# new Image -> pretrained foreward ResNet50 -> list of predictions
 # => combine and sort the two lists
 # first item = highest probability
 def encodings_model_test():
@@ -118,6 +118,14 @@ def get_all_embeddings(input_dir, output_dir):
 
     after = len(os.listdir(output_dir))
     print('Added ' + str(before - after) + ' embeddings')
+
+
+# use embeddings calculated with pretrained ResNet50 as input
+# train new classifier
+# makes it easy to add new classes
+# just calculate the embaddings for new the class and retrain the classifier
+def embeddings_classifier():
+    pass
 
 
 def main():
