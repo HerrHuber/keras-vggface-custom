@@ -14,17 +14,18 @@ from ResNet_keras.models import ResNet50
 from use_vggface_data import load_vggface_data
 
 
-# train ResNet50 topless model from scratch
-# uses tripletSemiHardLoss function to calculation image embeddings
-# see: https://www.tensorflow.org/addons/tutorials/losses_triplet
+# Train a ResNet50 implementation from Benedikt Huber
+# loads data and trains the model in batches to avoid running out of memory
 def ResNet50_classifier():
     data_dir = '../../VGG_Datasets/output/cropped_images'
     label_dir = '../../VGG_Datasets/output/labels'
     batch_size = 32
+    epochs = 1
     img_height = 224
     img_width = 224
     #AUTOTUNE = tf.data.AUTOTUNE
     AUTOTUNE = 1
+
     train_ds, test_ds, class_names = load_vggface_data(
         data_dir,
         label_dir,
@@ -53,25 +54,19 @@ def ResNet50_classifier():
 
     history = new_model.fit(
         train_ds.batch(batch_size),
-        epochs=1,
+        epochs=epochs,
         validation_data=test_ds
     )
 
-
     """
     # Evaluate the network
-    results = model.predict(test_ds)
-    xxx = model.evaluate(test_ds)
+    results = new_model.predict(test_ds)
+    xxx = new_model.evaluate(test_ds)
     print(xxx)
-
-    print(results[:5])
-    for image, label in train_ds.take(5):
-        print("Image shape: ", image.numpy().shape)
-        print("Label: ", label.numpy())
     """
 
 
-# train ResNet50 topless model from scratch
+# train a ResNet50 topless model from scratch
 # uses tripletSemiHardLoss function to calculation image embeddings
 # see: https://www.tensorflow.org/addons/tutorials/losses_triplet
 def ResNet50_tripletloss():
@@ -120,6 +115,7 @@ def ResNet50_tripletloss():
     )
 
     model = ResNet50(input_shape=(224, 224, 3), classes=10)
+    # add necessery layers
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(0.001),

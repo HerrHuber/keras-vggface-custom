@@ -231,8 +231,9 @@ def crop_images(input_dir, label_dir, output_dir):
     print("Cropped ", after, " images")
 
 
+# Tensorflow tutorial on how to load data if dataset > memory
+# https://www.tensorflow.org/tutorials/load_data/images#load_using_keraspreprocessing
 def tf_example():
-    # https://www.tensorflow.org/tutorials/load_data/images#load_using_keraspreprocessing
     # downloand data
     print("tf.__version__: ", tf.__version__)
 
@@ -303,6 +304,10 @@ def tf_example():
         print("Label: ", label.numpy())
 
 
+# Loads previously downloaded subset of the vggface dataset
+# dataset is loaded and preprocessed in batches and
+# can be loaded in batches for training (if dataset > memory)
+# inspired by this tensorflow tutorial
 # https://www.tensorflow.org/tutorials/load_data/images#load_using_keraspreprocessing
 def load_vggface_data(data_dir, label_dir, batch_size, img_height1, img_width1, AUTOTUNE):
     global class_names
@@ -327,8 +332,6 @@ def load_vggface_data(data_dir, label_dir, batch_size, img_height1, img_width1, 
     examples = list(data_dir.glob('*'))
     example = Image.open(str(examples[0]))
     #example.show()
-
-
 
     print("str(data_dir / *: ", str(data_dir / '*'))
     list_ds = tf.data.Dataset.list_files(str(data_dir / '*'), shuffle=False)
@@ -367,6 +370,135 @@ def load_vggface_data(data_dir, label_dir, batch_size, img_height1, img_width1, 
         print("Label: ", label.numpy())
 
     return train_ds, val_ds, class_names
+
+
+# does not work
+# there is no convenient/efficient way provided by tensorflow to read
+# .npz files (numpy arrays) or any other format from file
+def load_embeddings(data_dir, label_dir, batch_size, AUTOTUNE):
+    #batch_size = 2
+    #AUTOTUNE = tf.data.AUTOTUNE
+    #AUTOTUNE = 1
+
+    #data_dir = '../../VGG_Datasets/output/cropped_images'
+    #label_dir = '../../VGG_Datasets/output/labels'
+    data_dir = pathlib.Path(data_dir)
+    label_dir = pathlib.Path(label_dir)
+    print("data_dir: ", data_dir)
+
+    image_count = len(list(data_dir.glob('*.jpg.npz')))
+    print("image_count: ", image_count)
+
+    examples = list(data_dir.glob('*'))
+    print(examples[0])
+
+    print("str(data_dir / *: ", str(data_dir / '*'))
+    list_ds = tf.data.Dataset.list_files(str(data_dir / '*'), shuffle=False)
+    list_ds = list_ds.shuffle(image_count, reshuffle_each_iteration=False)
+
+    filepath = ''
+    for f in list_ds.take(5):
+        filepath = f.numpy()
+        print("filepath: ", filepath)
+
+    class_names = np.array(sorted(list(set([get_label_from_name(item.name) for item in data_dir.glob('*')]))))
+    print("class_names[:10]: ", class_names[:10])
+    print("len(class_names): ", len(class_names))
+
+    val_size = int(image_count * 0.2)
+    train_ds = list_ds.skip(val_size)
+    print("train_ds: ", train_ds)
+    val_ds = list_ds.take(val_size)
+
+    m_train = tf.data.experimental.cardinality(train_ds).numpy()
+    m_val = tf.data.experimental.cardinality(val_ds).numpy()
+    print("m_train: ", m_train)
+    print("m_val: ", m_val)
+    print("m_train + m_val: ", m_train + m_val)
+
+    # what is train_ds?
+    for i in train_ds.take(1):
+        print("i: ", i)
+
+    def get_label(file_path):
+        filename = tf.strings.split(file_path, sep='/')[-1]
+        label = tf.strings.regex_replace(filename, '_[0-9]+\.jpg', '')
+        one_hot = label == class_names
+        return tf.argmax(one_hot)
+
+    def get_embedding(filepath):
+        #path = tf.keras.utils.get_file(filepath)
+        print("filepath: ", filepath)
+        print("filepath.shape: ", tf.shape(filepath))
+        file = tf.io.read_file(filepath)
+        print("file: ", file)
+        embedding = None
+        #with np.load(path) as data:
+        #    embedding = data['arg_0']
+        return embedding
+
+    def process_path(file_path):
+        print("in process_path file_path: ", file_path)
+        label = get_label(file_path)
+        img = get_embedding(file_path)
+        return img, label
+
+    # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
+    train_ds = train_ds.map(process_path, num_parallel_calls=AUTOTUNE)
+    val_ds = val_ds.map(process_path, num_parallel_calls=AUTOTUNE)
+
+    for image, label in train_ds.take(1):
+        print("Image shape: ", image.numpy().shape)
+        print("Label: ", label.numpy())
+
+    return train_ds, val_ds, class_names
+
+
+# does not work
+# attempt to use python generator to read numpy arrays (.npz) to tensorflow
+def load_embaddings2():
+    batch_size = 32
+    img_height = 224
+    img_width = 224
+    data_dir = '../../VGG_Datasets/output/image_embeddings'
+    label_dir = '../../VGG_Datasets/output/labels'
+    data_dir = pathlib.Path(data_dir)
+    label_dir = pathlib.Path(label_dir)
+    print("data_dir: ", data_dir)
+
+    class_names = np.array(sorted(list(set([get_label_from_name(item.name) for item in data_dir.glob('*')]))))
+
+    data_dir_list = list(data_dir.glob('*.jpg.npz'))
+
+    image_count = len(data_dir_list)
+    print("embeddings count: ", image_count)
+
+    examples = list(data_dir.glob('*'))
+    print(examples[0])
+
+    def gen_series():
+        i = 0
+        while True:
+            label = get_label2(data_dir_list[i])
+            print("label: ", label)
+            x = None
+            with np.load(data_dir_list[8]) as data:
+                print("data.files: ", data.files)
+                x = data['arr_0']
+                print("x: ", x)
+            yield x, label
+            i += 1
+
+    for i in range(5):
+        print(">>> ", gen_series())
+
+    train_ds = tf.data.Dataset.from_generator(
+        gen_series,
+        output_types=(tf.float32, tf.int32),
+        output_shapes=((None, 2048), (None, 1))
+    )
+    print("train_ds: ", train_ds)
+    return train_ds, class_names
 
 
 # create tf.data.Dataset from cropped images and labels
@@ -525,8 +657,37 @@ def my_example():
     """
 
 
-def resnet50_example():
-    pass
+# does not work
+# use embeddings calculated with pretrained ResNet50 as input
+# train new classifier
+# makes it easy to add new classes
+# just calculate the embeddings for new the class and retrain the classifier
+def embeddings_classifier():
+    batch_size = 32
+    img_height = 224
+    img_width = 224
+    data_dir = '../../VGG_Datasets/output/image_embeddings'
+    label_dir = '../../VGG_Datasets/output/labels'
+    # load embeddings
+    train_ds, class_names = load_embaddings2()
+
+    num_classes = len(class_names)
+
+    model = tf.keras.Sequential([
+        tf.keras.layers.Flatten(input_shape=(2048,)),
+        layers.Dense(128, activation='relu'),
+        layers.Dense(num_classes)
+    ])
+
+    model.compile(
+        optimizer='adam',
+        loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=['accuracy'])
+
+    model.fit(
+        train_ds.batch(batch_size),
+        epochs=1,
+    )
 
 
 def main():
@@ -551,6 +712,13 @@ def main():
     #crop_images(input_dir, label_dir, output_dir)  # 43956 images after delete
     #tf_example()
     #my_example()
+    #train_ds, class_names = load_embaddings2()
+    #print(train_ds.take(1))
+    #batch = train_ds.batch(32)
+    #x, y = next(iter(batch))
+    #print("x: ", x)
+    #print("y: ", y)
+    #embeddings_classifier()
 
 
 if __name__ == "__main__":

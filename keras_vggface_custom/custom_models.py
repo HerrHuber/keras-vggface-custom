@@ -15,13 +15,13 @@ from keras_vggface.vggface import VGGFace
 from keras.engine import Model
 from keras.layers import Flatten, Dense, Input
 
-import tensorflow_addons as tfa
-import tensorflow_datasets as tfds
+#import tensorflow_addons as tfa
+#import tensorflow_datasets as tfds
 
 
 # does not work!!!!
 # take pretrained VGG16 model
-# and continue training with new class (my images)
+# and continue training with an additional new class (my images)
 def contiue_training():
     boundingbox_path = '../boxes/'
     # read to X, Y
@@ -57,7 +57,6 @@ def contiue_training():
     # model.compile(optimizer="adam", loss=tf.keras.losses.sparse_categorical_crossentropy(from_logits=True), metrics=["accuracy"])
     model.fit(x=X, y=Y, epochs=num_epochs, batch_size=minibatch_size)
 
-
     # acc_loss_train = model.evaluate(x=X_train, y=Y_train)
     # acc_loss_test = model.evaluate(x=X_test, y=Y_test)
     # print()
@@ -83,10 +82,12 @@ def continue_train_topless_binary():
     print(time.time())
     # fine tuning
 
+    # my images
     boundingbox_path = '../boxes/'
+    # not my images
     boundingbox_path2 = '../boxes2/'
-    # read to X, Y
-    #classes = 2622  # assumes 2622 classes from 0 to 2621 => new class 2622
+
+    # read images to X
     classes = [1, 0]
     my_images = os.listdir(boundingbox_path)
     notmy_images = os.listdir(boundingbox_path2)
@@ -105,6 +106,7 @@ def continue_train_topless_binary():
 
     X = X / 255
 
+    # label images, assumes same order as X
     Y1 = np.ones((m1, 1)) * (classes[0])
     Y2 = np.zeros((m2, 1)) * (classes[1])
     Y = np.concatenate((Y1, Y2), axis=0)
@@ -112,7 +114,6 @@ def continue_train_topless_binary():
     print("X.shape: ", X.shape)
     print("Y.shape: ", Y.shape)
 
-    # custom parameters
     nb_class = 2
     hidden_dim = 512
     num_epochs = 2
@@ -150,17 +151,9 @@ def continue_train_topless_binary():
     #print(preds_train)
 
 
-# just testing tf.data.Dataset
+# testing tf.data.Dataset
+# https://www.tensorflow.org/guide/data#consuming_numpy_arrays
 def tf_data_test():
-    # https://www.tensorflow.org/guide/data#consuming_numpy_arrays
-    # get all images
-    # read image
-    # get bounding box points from files
-    # extract image name
-    # assign label => Y
-    # get bounding box
-    # scale to 224 x 224
-    # ...
     train, test = tf.keras.datasets.fashion_mnist.load_data()
 
     images, labels = train
@@ -197,9 +190,9 @@ def tf_data_test():
     print("Accuracy :", accuracy)
 
 
-# just testing tf.keras.preprocessing.image_dataset_from_directory
+# testing tf.keras.preprocessing.image_dataset_from_directory
+# https://www.tensorflow.org/tutorials/load_data/images#load_using_keraspreprocessing
 def load_image_data_tf():
-    # https://www.tensorflow.org/tutorials/load_data/images#load_using_keraspreprocessing
     # downloand data
     print(tf.__version__)
 
@@ -249,7 +242,7 @@ def load_image_data_tf():
 
 
 def main():
-    pass
+    continue_train_topless_binary()
 
 
 if __name__ == "__main__":

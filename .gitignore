@@ -3,11 +3,9 @@
 ### Python template
 
 # Datasets
-boxes
 boxes2
 datasets
 embeddings
-images
 
 
 # Byte-compiled / optimized / DLL files

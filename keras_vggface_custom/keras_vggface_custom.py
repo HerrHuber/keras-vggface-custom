@@ -220,8 +220,23 @@ def old_save_boundingbox():
             print(image + ' already extrated')
 
 
+def get_and_save_boundingbox(imagename, input_dir='../images', output_dir='../boxes'):
+    face = extract_face(os.path.join(input_dir, imagename))
+    im = Image.fromarray(face)
+    im.save(os.path.join(output_dir, imagename))
+
+
 def main():
-    pass
+    # add new identity to bounding boxes
+    #imagename = 'Benedikt_Huber_16.jpg'
+    # source: https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Benedict_Cumberbatch_%2848470894756%29_%28cropped%29.jpg/440px-Benedict_Cumberbatch_%2848470894756%29_%28cropped%29.jpg
+    #imagename = 'Benedict_Cumberbatch.jpg'
+    # source: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Madonna_Rebel_Heart_Tour_2015_-_Stockholm_%2823051472299%29_%28cropped%29.jpg/440px-Madonna_Rebel_Heart_Tour_2015_-_Stockholm_%2823051472299%29_%28cropped%29.jpg
+    imagename = 'Madonna.jpg'
+    #get_and_save_boundingbox(imagename)
+    # source: https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Rebel_Heart_3.jpg/440px-Rebel_Heart_3.jpg
+    imagename = 'Madonna2.jpg'
+    get_and_save_boundingbox(imagename)
 
 
 if __name__ == "__main__":
